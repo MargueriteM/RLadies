@@ -1,88 +1,287 @@
 ---
-title: "R Ladies El Paso, ggplot demo"
+title: "R Ladies El Paso,  ggplot demo"
 output:
-  pdf_document: default
-  html_notebook: default
   html_document:
     df_print: paged
     author: Marguerite Mauritz
+  html_notebook: default
+  pdf_document: default
 ---
 
-This is a demonstration of some basic ggplot features and how to customise figures. 
-The data we are using was collected by the Systems Ecology Lab at UTEP (https://selutep.squarespace.com/chihuahuan-desert). 
+#####This is a starter of some basic ggplot features and how to customise figures. 
+
+There are lots of resources online.
+  
+* R cheatsheets:  
++ [In english](https://rstudio.com/wp-content/uploads/2015/03/ggplot2-cheatsheet.pdf)  
++ [En espanol](https://rstudio.com/wp-content/uploads/2015/04/ggplot2-spanish.pdf) 
+
+* [Cookbooks](http://www.cookbook-r.com/Graphs/)
+
+* Hadley Wickham's [Tidyverse](https://www.tidyverse.org)
+
+### Here, I have combined dplyr to prepare the data andd ggplot for graphing (*obviously*) 
+Inspiration also came from [this tutorial](http://www.rebeccabarter.com/blog/2017-11-17-ggplot2_tutorial/) by Rebecca Barter. 
+
+## Some basics
+
+ggplot uses layered grammar that consists of **data**, **aesthetics** that describe the positioning and visuals of data, and 
+**geometries** that describe the geometric objects used to display the data. 
+
+#### So, to build a ggplot you always need to define the basics: 
+
+* data
+* aes (aesthetics: x, y, colour group, shape group)
+* geom (geometric objects: lines, points, boxes, bars, histograms, smoothers, etc)
+
+
+## Get started: 
+
+### First, load R libraries
+```{r load libraries, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(lubridate)
+```
+
+### Second, import data:  
+Import in wide format  
+(in the background: transform to long format, and subset for the basic start)  
+*Don't worry about the details for now*
+```{r import data, warning=FALSE}
+# Import data in wide format
+data.wide <- read.csv("Precip_SoilMoisture_USJo1_2018_2019_wide.csv")
+data.wide <- data.wide %>% mutate(date_time = ymd_hms(date_time))
+```
+```{r echo=FALSE, warning=FALSE}
+# transform to long format
+data.long.pre <- data.wide %>%
+  pivot_longer(-date_time, names_to = "variable.id", values_to = "value")
+
+# split variable.id into meaningful descriptors
+data.long <- data.long.pre %>% 
+  mutate(variable = sapply(strsplit(as.character(variable.id),"_"),"[",1),
+         vegetation = sapply(strsplit(as.character(variable.id),"_"),"[",2),
+         depth = sapply(strsplit(as.character(variable.id),"_"),"[",3)) %>%
+  filter(vegetation %in% c("BARE","LATR","rain"))
+
+# subset data  to explore some basic ggplot features
+data.basic <- data.long %>% filter (variable == "VWC" & vegetation == "LATR" & depth %in% c("10","30") & year(date_time)==2018)
+
+```
+
+
+### Third, start making some figures
+
+Remember, ggplot needs you to define:  
+
+* data
+* aes
+* geom
+
+##### The basic structure is this: 
+ggplot(**data**, **aes**(x,y, colour = , shape = )) +  
+**geom**_point ()
+
+**Map the data and aesthetics:**
+```{r Map the data and aesthetics:, warning=FALSE}
+ggplot(data.basic, aes(date_time, value))
+
+```
+
+**Add the geom:**
+```{r add the geom:, warning=FALSE}
+ggplot(data.basic, aes(date_time, value))+
+  geom_point(size=0.5)
+
+```
+
+**It looks like there are two things going on. Let's add a colour to distinguish groups:**
+```{r add colour:, warning=FALSE}
+ggplot(data.basic, aes(date_time, value, colour = depth))+
+  geom_point(size=0.5)
+
+```
+
+*Cool, now I can see I have data at two different depths!*
+
+**Now, play with different geoms. Change the geom_point to a line:**
+```{r use a line instead of points:,eval=FALSE, warning=FALSE}
+ggplot(data.basic, aes(date_time, value, colour = depth))+
+  
+# define different geom here: 
+  geom_ ()
+
+```
+
+
+**Instead of a colour you could specify the line type in the aes. Graph as a line and change the line type**
+```{r use a line instead of points and use line type instead of colour to distinguish groups:, eval=FALSE, warning=FALSE}
+ggplot(data.basic, aes(date_time, value, *change linetype here* = depth))+
+  
+# define different geom here: 
+  geom_ ()
+
+```
+
+**Maybe you want to see how the data values are distributed. **
+**Graph the data as a density plot **  
+Density plots use only an x variable, no y
+```{r show data distribution:, warning=FALSE}
+ggplot(data.basic, aes(value, colour = depth))+
+  geom_density()
+
+```
+
+**When you change the geom display, often you have to change the aes to match the geom style **  
+For a density plot a fill can be nicer than a colour.
+
+```{r define fill instead of colour:, warning=FALSE}
+ggplot(data.basic, aes(value, fill = depth))+
+  geom_density(alpha=0.5)
+
+```
+
+*Notice how fill changed the area colour (the fill) and we lost the colour of the line.* 
+
+**If we want both fill and line colour:**
+```{r define fill and line colour:, warning=FALSE}
+ggplot(data.basic, aes(value, fill = depth, colour = depth))+
+  geom_density(alpha=0.5)
+
+```
+
+
+# Ok, cool. Now let's get more involved. 
+Let's learn a bit more about this data, distinguish between wide and long format, and make more graphs!
+
+### By the end, you will have code to customise your ggplot and make figures like this: 
+
+```{r, echo=FALSE, warning=FALSE}
+data.long %>%
+  filter(variable == "VWC" & !(vegetation == "BARE" & depth=="5") & depth != "5" ) %>%
+  mutate(depth.order = factor(depth, levels = c("5","10","20","30"))) %>%
+  mutate(veg.labels = ifelse(vegetation=="BARE", "Bare ground","Creosote")) %>%
+  
+  ggplot(.,aes(date_time, value, colour=depth.order))+
+           geom_line()+
+  labs(title="Soil Moisture for Bare ground and Creosote", x="Date & Time", y="Water Content (%)", colour = "Depth (cm)")+
+  scale_colour_manual(values=(c("10"="mediumblue",
+                               "20"="deepskyblue3",
+                               "30"="darkslategray3")))+
+  facet_grid(veg.labels~., scales = "free_y")+
+  theme(axis.text.y = element_text(size=10,margin=unit(c(1,2,1,2),"mm")), # margin:adjust text distance from axis
+        axis.text.x = element_text(size=10,margin=unit(c(2,2,2,2),"mm")), # margin: (?, tick text, ?, legend title)
+        axis.title.y = element_text(size=12),
+        axis.title.x = element_text(size=12),
+        axis.ticks.length=unit(-1.0,"mm"),
+        legend.key.size=unit(4,"mm"),
+        legend.key = element_rect(fill=NA, colour=NA),
+        legend.title =element_text(size=10),
+        legend.text = element_text(size=8),
+        legend.position = c(0.09,0.37), # or: "top","bottom","left","right"
+       # legend.justification=c(0.1,0.5),
+        strip.text.y = element_text(size=14),
+        strip.background = element_rect(colour="white",fill="white"),
+        panel.background = element_rect(colour="black",fill="white", size=unit(0.25,"mm")),
+       panel.border = element_rect(colour="black", fill=NA),
+        panel.grid = element_blank(),
+        plot.margin=unit(c(2,1,1,1),"mm") #top,right,bottom,left)
+  )
+```
+
+
+## About the data
+
+The data we are using was collected by the [Systems Ecology Lab at UTEP](https://selutep.squarespace.com/chihuahuan-desert).  
 The data show soil moisture and precipitation (rainfall) at a research site in the Chihuhahuan Desert at the Jornada Experimental Range. 
 
 This data shows how different sizes and distribution of rainfall events affect the soil moisture profile (5-30cm depth).
 
-The rainfall data is collected with a rainguage and the soil moisture data is measured with volumetric water content probes. 
+The rainfall data is collected with a rainguage and measured in mm, the soil moisture data is measured as a percentage. 
 
 The soil moisture is measured in bare ground and under Creosote (Larrea tridendata = LATR) because the plant canopy and root structure may impact how much water reaches the soil and the pathway that water follows into the ground. The canopy intercepts rain drops and can slow rain drops to reduce water loss via surface runoff. In adddition, the presence of root channels under the creosote may help water flow into the ground instead of running off the surface. 
 
 
-#![This is the site](DSC00859.jpg)
+#### This is a picture of the field site: 
+![](DSC00859.jpg)
 
 
-# Load R libraries
-```{r load libraries, message=FALSE}
-library(tidyverse)
-library(lubridate)
-```
-## Import data in wide format
-```{r import data}
-# Import data in wide format
-data.wide <- read.csv("Precip_SoilMoisture_USJo1_2018_2019_wide.csv")
-data.wide <- data.wide %>% mutate(date_time = ymd_hms(date_time))
+# Back to the data for a moment because we it's helpful to understand data structure to use ggplot. 
+### We imported data in wide format and then converted to long format:
+### What's the deal?
+
+#### View the data in wide format
+```{r view the data in wide format, warning=FALSE}
 # view top of data (default, n=6 first rows)
 head(data.wide)
 ```
 
+#### ...and all the column names
+```{r column names, warning=FALSE}
+# view top of data (default, n=6 first rows)
+colnames(data.wide)
+```
+
 ## Plot data in wide format
-```{r Plot data in wide format}
+```{r Plot data in wide format, warning=FALSE}
 ggplot(data.wide)+
   geom_line(aes(date_time, VWC_BARE_5), colour="lightblue")+
   geom_line(aes(date_time, VWC_BARE_10), colour="darkblue")
 
 ```
 
-## Transform the data to long format
-```{r transform the data to long format}
-data.long <- data.wide %>%
-  pivot_longer(-date_time, names_to = "variable.id", values_to = "value")
 
-head(data.long)
+### Then we transformed the data to long format. WHAT?!
+
+Code for putting data in long format:
+```{r code for long format, eval=FALSE, warning=FALSE}
+data.long.pre <- data.wide %>%
+  pivot_longer(-date_time, names_to = "variable.id", values_to = "value")
+```
+
+#### Let's look at that 'loooooong' format data
+```{r view the long format, warning=FALSE}
+head(data.long.pre)
 ``` 
 
-## Split variable ID into meaningful descriptors
-```{r split variable ID into meaningful descriptors}
-data.long <- data.long %>% 
+#### *This is still hard to use. Let's split variable ID into meaningful descriptors:*
+Code:
+```{r split variable ID into meaningful descriptors, eval=FALSE, warning=FALSE}
+data.long <- data.long.pre %>% 
   mutate(variable = sapply(strsplit(as.character(variable.id),"_"),"[",1),
          vegetation = sapply(strsplit(as.character(variable.id),"_"),"[",2),
          depth = sapply(strsplit(as.character(variable.id),"_"),"[",3)) %>%
   filter(vegetation %in% c("BARE","LATR","rain"))
+```
 
+#### Let's look at the long format now. 
+```{r, warning=FALSE}
 head(data.long)
 ```
 
-## Look at levels in variable, depth, and vegetation
-```{r Look at levels in variable, depth, and vegetation}
+#### Great. We made a variable, depth, and vegetation column. What's in those columns?
 
+Look at levels in variable, depth, and vegetation
+```{r Look at levels in variable.id, warning=FALSE}
 levels(factor(data.long$variable.id))
 ```
-```{r}
+```{r Look at levels in variabe, warning=FALSE}
 levels(factor(data.long$variable))
 ```
-```{r}
+```{r Look at levels in vegetation, warning=FALSE}
 levels(factor(data.long$vegetation))
 ```
-```{r}
+```{r Look at levels in depth, warning=FALSE}
 levels(factor(data.long$depth))
 ```
 
-# Figures from long format
+### Ok. Awesome. I think I understand the data a bit better. 
+### *Let's get back to figures!*
 
-# Plot rainfall data
+# Figures from long format data:
 
-```{r plot rainfall data}
+#### Plot rainfall data
+```{r plot rainfall data, warning=FALSE}
 data.long %>%
   filter(variable == "P") %>%
   ggplot(.,aes(date_time, value))+
@@ -90,26 +289,19 @@ data.long %>%
 
 ```
 
-# Plot soil moisture data
-```{r plot soil moisture data}
+
+#### Plot soil moisture data
+```{r plot soil moisture data, warning=FALSE}
 data.long %>%
   filter(variable == "VWC") %>%
   ggplot(.,aes(date_time, value))+
            geom_line()
 ```
 
+### *Oh, oops. This looks weird. I forgot we had different moisture and depth groups!  Let's add that info.*
 
-# Add vegetation detail to soil moisture plot
-```{r add vegetation detail to soil moisture plot}
-data.long %>%
-  filter(variable == "VWC") %>%
-  ggplot(.,aes(date_time, value, colour=vegetation))+
-           geom_line()
-
-```
-
-# Add vegetation and depth detail to soil moisture plot
-```{r add vegetation and depth detail to soil moisture plot}
+#### Add vegetation and depth detail to soil moisture plot
+```{r add vegetation and depth detail to soil moisture plot, warning=FALSE}
 data.long %>%
   filter(variable == "VWC") %>%
   ggplot(.,aes(date_time, value, colour=vegetation))+
@@ -117,30 +309,28 @@ data.long %>%
 
 ```
 
-# Make a nicer vegetation and depth plot for soil moisture
-```{r Make a nicer vegetation and depth plot for soil moisture}
+### Meh, still kinda ugly and hard to read. 
+#### *Make a nicer vegetation and depth plot for soil moisture*
+```{r Make a nicer vegetation and depth plot for soil moisture, warning=FALSE}
 data.long %>%
   filter(variable == "VWC") %>%
   ggplot(.,aes(date_time, value, colour=depth))+
            geom_line()+
   facet_grid(vegetation~.)
-
 ```
 
-# Scale y-axes to each data facet 
-
-```{r adjust scales on vegetation and depth plot for soil moisture}
+### Scale y-axes to each data facet using scales="free_y"
+```{r adjust scales on vegetation and depth plot for soil moisture, warning=FALSE}
 data.long %>%
   filter(variable == "VWC") %>%
   ggplot(.,aes(date_time, value, colour=depth))+
            geom_line()+
   facet_grid(vegetation~., scales = "free_y")
-
 ```
 
 
-# The data at 5cm depth in bare areas looks wacky, remove that
-```{r remove Bare, 5cm}
+### The data at 5cm depth in bare areas looks wacky, remove that
+```{r remove Bare, 5cm, warning=FALSE}
 data.long %>%
   filter(variable == "VWC" & !(vegetation == "BARE" & depth=="5")) %>%
   ggplot(.,aes(date_time, value, colour=depth))+
@@ -148,8 +338,8 @@ data.long %>%
   facet_grid(vegetation~., scales = "free_y")
 ```
 
-# Make the figure prettier with default theme (theme_bw)
-```{r Make the figure prettier using default theme}
+### Make the figure prettier with default theme (theme_bw)
+```{r Make the figure prettier using default theme, warning=FALSE}
 data.long %>%
   filter(variable == "VWC" & !(vegetation == "BARE" & depth=="5")) %>%
   ggplot(.,aes(date_time, value, colour=depth))+
@@ -158,8 +348,8 @@ data.long %>%
   theme_bw()
 ```
 
-# Modify axes
-```{r modify axes}
+### Modify axes with the labs command
+```{r modify axes, warning=FALSE}
 data.long %>%
   filter(variable == "VWC" & !(vegetation == "BARE" & depth=="5")) %>%
   ggplot(.,aes(date_time, value, colour=depth))+
@@ -170,9 +360,9 @@ data.long %>%
 ```
 
 
-# Argh!!! R is ordering my data wrong. Why is 5 after 10, 20, and 30!?
-Fix data order with user-specified levels
-```{r remove levels that have no data by adding a new column with user-specific levels}
+### Argh!!! R is ordering my data wrong. Why is 5 after 10, 20, and 30!?
+Fix data order with user-specified levels by adding a new column with mutate function
+```{r remove levels that have no data by adding a new column with user-specific levels, warning=FALSE}
 data.long %>%
   filter(variable == "VWC" & !(vegetation == "BARE" & depth=="5")) %>%
   mutate(depth.order = factor(depth, levels = c("5","10","20","30"))) %>%
@@ -186,9 +376,9 @@ data.long %>%
 
 
 
-# But actually there isn't even any 5cm data. 
-Clean up by dropping data that isn't there
-```{r remove levels that have no data}
+### There isn't even any 5cm data. Let's remove it.
+Clean up by dropping data that isn't there by adding an aditional filter
+```{r remove levels that have no data, warning=FALSE}
 data.long %>%
   filter(variable == "VWC" & !(vegetation == "BARE" & depth=="5") & depth != "5") %>%
 #  droplevels () %>%
@@ -200,11 +390,11 @@ data.long %>%
   theme_bw()
 ```
 
-# But R is still using column names and keeps changing the colours around!!
-Add meaningful labels and fix colours
-colour examples: http://sape.inf.usi.ch/quick-reference/ggplot2/colour 
+### But R is still using column names and keeps changing the colours around!!
+Add meaningful labels and fix colours using scale_colour_manual  
+*[colour examples](http://sape.inf.usi.ch/quick-reference/ggplot2/colour)* 
 
-```{r improve graph layout with labels and custom colours}
+```{r improve graph layout with labels and custom colours, warning=FALSE}
 data.long %>%
   filter(variable == "VWC" & !(vegetation == "BARE" & depth=="5") & depth != "5") %>%
 #  droplevels () %>%
@@ -221,9 +411,9 @@ data.long %>%
   theme_bw()
 ```
 
-# That grey in the side bars is still pretty ugly
+### That grey in the side bars is still pretty ugly, add a custom theme piece
 
-```{r fix colour of facet}
+```{r fix colour of facet, warning=FALSE}
 data.long %>%
   filter(variable == "VWC" & !(vegetation == "BARE" & depth=="5") & depth != "5") %>%
 #  droplevels () %>%
@@ -241,8 +431,8 @@ data.long %>%
   theme( strip.background = element_rect(colour="white",fill="white"))
 ```
 
-# Theme allows you to change almost everything!
-```{r customise all parts of theme}
+### Theme allows you to change almost everything! If you use just theme()
+```{r customise all parts of theme, warning=FALSE}
 data.long %>%
   filter(variable == "VWC" & !(vegetation == "BARE" & depth=="5") & depth != "5") %>%
 #  droplevels () %>%
@@ -278,8 +468,8 @@ data.long %>%
 
 ```
 
-# Save the plot
-```{r To save, assign the plot to an object and then save with ggsave}
+### Save the plot using ggsave
+```{r To save, assign the plot to an object and then save with ggsave, warning=FALSE}
 
 p<-data.long %>%
   filter(variable == "VWC" & !(vegetation == "BARE" & depth=="5") & depth != "5") %>%
@@ -319,45 +509,8 @@ ggsave(filename="sampleplot", plot=p, device="pdf")
 ```
 
 
-
-```{r}
-
-data.long %>%
-  filter(!(vegetation == "BARE" & depth=="5") & (is.na(depth) | depth %in% c("10","20","30"))) %>%
-# mutate(depth.order = factor(depth, levels = c("5","10","20","30","NA"))) %>%
-  mutate(veg.labels = ifelse(vegetation=="rain", "Rain", ifelse(vegetation=="BARE", "Bare ground","Creosote"))) %>%
-  mutate(depth = ifelse(vegetation=="rain","rain",depth)) %>%
-  ggplot(.,aes(date_time, value, colour=depth))+
-           geom_line()+
-  labs(title="Soil Moisture and Precipitation", x="Date & Time", y="Rain (mm), Water Content (%)", colour = "Depth (cm)")+
-  scale_colour_manual(values=(c("10"="mediumblue",
-                               "20"="deepskyblue3",
-                               "30"="darkslategray3",
-                               "rain" = "black")))+
-  facet_grid(paste(variable,veg.labels)~., scales = "free_y")+
-  theme(axis.text.y = element_text(size=10,margin=unit(c(1,2,1,2),"mm")), # margin:adjust text distance from axis
-        axis.text.x = element_text(size=10,margin=unit(c(2,2,2,2),"mm")), # margin: (?, tick text, ?, legend title)
-        axis.title.y = element_text(size=12),
-        axis.title.x = element_text(size=12),
-        axis.ticks.length=unit(-1.0,"mm"),
-        legend.key.size=unit(4,"mm"),
-        legend.key = element_rect(fill=NA, colour=NA),
-        legend.title =element_text(size=10),
-        legend.text = element_text(size=8),
-       # legend.position = c(0.09,0.37), # or: "top","bottom","left","right"
-       # legend.justification=c(0.1,0.5),
-        strip.text.y = element_text(size=10),
-        strip.background = element_rect(colour="white",fill="white"),
-        panel.background = element_rect(colour="black",fill="white", size=unit(0.25,"mm")),
-       panel.border = element_rect(colour="black", fill=NA),
-        panel.grid = element_blank(),
-        plot.margin=unit(c(2,1,1,1),"mm") #top,right,bottom,left)
-  )
-
-```
-
-# Show only data in July and August 2019
-```{r specify date range of figure}
+### Show only data in July and August 2019 using scale_x_datetime
+```{r specify date range of figure, warning=FALSE}
 data.long %>%
   filter(!(vegetation == "BARE" & depth=="5") & (is.na(depth) | depth %in% c("10","20","30"))) %>%
 # mutate(depth.order = factor(depth, levels = c("5","10","20","30","NA"))) %>%
@@ -393,10 +546,10 @@ data.long %>%
 ```
 
 
-# Getting really fancy
+# Getting really fancy by graphing data from multiple data frames
 Let's calculate an average soil moisture for all depths and plot it on top of the individual depths
 
-```{r calculate mean soil moisture for each vegetation type}
+```{r calculate mean soil moisture for each vegetation type, warning=FALSE}
 vwc.mean <- data.long %>%
   filter(variable == "VWC" & !(vegetation == "BARE" & depth=="5") & depth != "5") %>%
     mutate(veg.labels = as.factor(ifelse(vegetation=="BARE", "Bare ground","Creosote")),
@@ -408,7 +561,7 @@ summary(vwc.mean)
 
 ```
 
-# Overlay data from two different data frames in figure
+### Overlay data from the raw measurements and averages in one figure
 ```{r}
 ggplot()+
          geom_line(data = data.long %>%
@@ -422,7 +575,7 @@ aes(date_time, value, colour=depth.order), size=1)+
   scale_colour_manual(values=(c("10"="mediumblue",
                                "20"="deepskyblue3",
                              "30"="darkslategray3",
-                             "mean"="grey")))+
+                             "mean"="black")))+
   facet_grid(veg.labels~., scales = "free_y")+
   theme(axis.text.y = element_text(size=10,margin=unit(c(1,2,1,2),"mm")), # margin:adjust text distance from axis
         axis.text.x = element_text(size=10,margin=unit(c(2,2,2,2),"mm")), # margin: (?, tick text, ?, legend title)
@@ -446,9 +599,9 @@ aes(date_time, value, colour=depth.order), size=1)+
 
 
 # The wide data format does have some uses for graphing
-# mainly: relationships
+# For examples, it's much easier to graph relationships
 
-```{r plot a correlation between soil moisture variables}
+```{r plot a correlation between soil moisture variables, warning=FALSE}
 
 ggplot(data.wide, aes(VWC_LATR_10, VWC_BARE_10))+
   geom_point()+
