@@ -5,6 +5,7 @@ output:
   html_notebook: default
   html_document:
     df_print: paged
+    author: Marguerite Mauritz
 ---
 
 This is a demonstration of some basic ggplot features and how to customise figures. 
