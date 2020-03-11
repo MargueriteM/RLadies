@@ -1,10 +1,10 @@
 ---
 title: "R Ladies El Paso, ggplot demo"
 output:
+  pdf_document: default
+  html_notebook: default
   html_document:
     df_print: paged
-  html_notebook: default
-  pdf_document: default
 ---
 
 This is a demonstration of some basic ggplot features and how to customise figures. 
@@ -442,4 +442,16 @@ aes(date_time, value, colour=depth.order), size=1)+
         plot.margin=unit(c(2,1,1,1),"mm") #top,right,bottom,left)
   )
 ```
+
+
+# The wide data format does have some uses for graphing
+# mainly: relationships
+
+```{r plot a correlation between soil moisture variables}
+
+ggplot(data.wide, aes(VWC_LATR_10, VWC_BARE_10))+
+  geom_point()+
+  theme_bw()
+```
+
 
