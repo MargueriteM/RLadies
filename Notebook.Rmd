@@ -1,5 +1,5 @@
 ---
-title: "R Ladies El Paso,  ggplot demo"
+title: "R Ladies El Paso,  ggplot demo, 11 March 2020"
 output:
   html_document:
     df_print: paged
@@ -14,7 +14,7 @@ There are lots of resources online.
   
 * R cheatsheets:  
 + [In english](https://rstudio.com/wp-content/uploads/2015/03/ggplot2-cheatsheet.pdf)  
-+ [En espanol](https://rstudio.com/wp-content/uploads/2015/04/ggplot2-spanish.pdf) 
++ [En español](https://rstudio.com/wp-content/uploads/2015/04/ggplot2-spanish.pdf) 
 
 * [Cookbooks](http://www.cookbook-r.com/Graphs/)
 
@@ -125,7 +125,7 @@ ggplot(data.basic, aes(date_time, value, *change linetype here* = depth))+
 
 **Maybe you want to see how the data values are distributed. **
 **Graph the data as a density plot **  
-Density plots use only an x variable, no y
+Note: Density plots use only an x variable, no y
 ```{r show data distribution:, warning=FALSE}
 ggplot(data.basic, aes(value, colour = depth))+
   geom_density()
@@ -206,7 +206,7 @@ The soil moisture is measured in bare ground and under Creosote (Larrea tridenda
 ![](DSC00859.jpg)
 
 
-# Back to the data for a moment because we it's helpful to understand data structure to use ggplot. 
+# Back to the data for a moment because it's helpful to understand data structure when using ggplot. 
 ### We imported data in wide format and then converted to long format:
 ### What's the deal?
 
@@ -411,7 +411,7 @@ data.long %>%
   theme_bw()
 ```
 
-### That grey in the side bars is still pretty ugly, add a custom theme piece
+### That grey in the side bars is still ugly, add a custom theme piece
 
 ```{r fix colour of facet, warning=FALSE}
 data.long %>%
@@ -469,6 +469,7 @@ data.long %>%
 ```
 
 ### Save the plot using ggsave
+to save, assign the plot to an object and then use ggsave
 ```{r To save, assign the plot to an object and then save with ggsave, warning=FALSE}
 
 p<-data.long %>%
@@ -562,6 +563,9 @@ summary(vwc.mean)
 ```
 
 ### Overlay data from the raw measurements and averages in one figure
+ when you put the data inside the ggplot() command then you have defined a global data frame that will apply to all other parts of the figure.  
+ If you want to graph different data in each geom command then you can specify data within the geom_ () itself.  
+ Add two geom_line() components and define different data for each. 
 ```{r}
 ggplot()+
          geom_line(data = data.long %>%
@@ -575,7 +579,7 @@ aes(date_time, value, colour=depth.order), size=1)+
   scale_colour_manual(values=(c("10"="mediumblue",
                                "20"="deepskyblue3",
                              "30"="darkslategray3",
-                             "mean"="black")))+
+                             "mean"="grey")))+
   facet_grid(veg.labels~., scales = "free_y")+
   theme(axis.text.y = element_text(size=10,margin=unit(c(1,2,1,2),"mm")), # margin:adjust text distance from axis
         axis.text.x = element_text(size=10,margin=unit(c(2,2,2,2),"mm")), # margin: (?, tick text, ?, legend title)
