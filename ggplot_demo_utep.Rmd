@@ -20,6 +20,7 @@ https://github.com/MargueriteM/RLadies
 To run the code, use the following two files and place them in the same folder on your computer:  
 * ggplot_demo_utep.Rmd
 * Precip_SoilMoisture_USJo1_2018_2019_wide.R
+* DSC00859.jpg (only required to knit the file)
 
 ## There are lots of resources online.
   
