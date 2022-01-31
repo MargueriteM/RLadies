@@ -87,7 +87,7 @@ data.basic <- data.long %>% filter (variable == "VWC" & vegetation == "LATR" & d
 
 ## It's always a good idea to know your data structure, and check it:  
 
-I am working with soil moisture data from the Jornada LTER and US-Jo1 Eddy Covariance Tower site. We're starting with a simplified dataset in which soil moisture is measured under Creosote bush (**Larrea tridentata**) at 10 and 30cm depths. 
+I am working with soil moisture data from the Jornada LTER and US-Jo1 Eddy Covariance Tower site. We're starting with a simplified dataset in which soil moisture is measured under Creosote bush (*Larrea tridentata*) at 10 and 30cm depths. 
 
 The simplified data frame is called data.basic
 
@@ -102,7 +102,7 @@ glimpse(data.basic)
 ```
 
 #### Let's look at categories in the character columns.  
-We will use `levels()` which only works on factor columns. Note also that I have included the rain data as a category in 'vegetation' - this will help with alignment of data when using `facet_grid()`
+We will use `levels()` which only works on factor columns, which is why I've added a `factor()` command. 
 ```{r Examine data 3:, warning=FALSE}
 levels(factor(data.basic$vegetation))
 levels(factor(data.basic$depth))
